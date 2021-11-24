@@ -1,399 +1,12 @@
 #include <bits/stdc++.h> 
+#include "helper_functions.hpp"
+#include "constants.hpp"
+#include "energy_calculation.hpp"
+#include "metropolis_super_perm.hpp"
+#include "Link.hpp"
+#include "MarkedPermutationsLimits.hpp"
 
 using namespace std;
-
-
-constexpr int NUMBER_OF_SYMBOLS = 7;
-constexpr u_int32_t PERMUTATION_OF_SEVEN = 5040;
-
-
-int factorial(int n) {
-    int res = 1;
-    for(int i = 1; i <= n; i++){
-        res *= i;
-    }
-    return res;
-}
-
-
-template<typename T> void print_vector(vector<T> &vec) {
-
-    int n = vec.size();
-    for(int i = 0; i < n; i++) {
-        if(i == n - 1)
-            cout << vec[i];
-        else
-            cout << vec[i] << " ";
-    }
-    cout << "\n";
-}
-
-template<typename T> void print_matrix(vector<vector<T>> &mat) {
-    for(int i = 0; i < mat.size(); i++) {
-        print_vector(mat[i]);
-    }
-}
-
-
-void convert_four_char_string_to_four_uint8(string &four_char_string) {
-
-    vector<uint8_t> symbol;
-
-    for(const auto c : four_char_string) {
-        symbol.push_back(static_cast<uint8_t>(c));
-    }
-
-    for(const uint8_t& s : symbol) {
-        cout << hex << (int)s << " ";
-    }
-    cout << endl;
-
-}
-
-uint32_t convert_four_char_string_to_uint32(string &four_char_string) {
-
-    constexpr uint32_t MASK = 0x000000FF;
-
-    uint32_t c0 = static_cast<uint32_t>(MASK & four_char_string[0]);
-    uint32_t c1 = static_cast<uint32_t>(MASK & four_char_string[1]);
-    uint32_t c2 = static_cast<uint32_t>(MASK & four_char_string[2]);
-    uint32_t c3 = static_cast<uint32_t>(MASK & four_char_string[3]);
-
-    uint32_t c = (c0 << 0) | (c1 << 8) | (c2 << 16) | (c3 << 24);
-
-    return c;
-}
-
-vector<uint32_t> convert_string(string &s) {
-
-    // cout << "s: " << s << endl;
-
-    constexpr uint32_t NUMBER_OF_CHARS_PER_SYMBOL = 4;
-
-    vector<uint32_t> symbols;
-    symbols.reserve(s.size() / NUMBER_OF_CHARS_PER_SYMBOL);
-    for(int i = 0; i < s.size(); i += NUMBER_OF_CHARS_PER_SYMBOL) {
-        string four_char_string = s.substr(i, NUMBER_OF_CHARS_PER_SYMBOL);
-        uint32_t c = convert_four_char_string_to_uint32(four_char_string);
-        // convert_four_char_string_to_four_uint8(four_char_string);
-        symbols.push_back(c);
-    }
-
-    return symbols;
-}
-
-void replace_big_ints_to_small_ones(vector<uint32_t> &v1, vector<int> &v2, map<uint32_t, int> &symbol_mapping) {
-
-    for(int i = 0; i < v1.size(); i++) {
-        v2[i] = symbol_mapping[v1[i]];
-    }
-}
-
-
-vector<vector<int>> convert_string_permutations_to_int_ones(vector<string> &str_vec, map<uint32_t, int> &symbol_mapping) {
-
-    int n = str_vec.size();
-    vector<vector<int>> vec(n, vector<int>(NUMBER_OF_SYMBOLS, 0));
-
-    for(int i = 0; i < str_vec.size(); i++) {
-        vector<uint32_t> symbols = convert_string(str_vec[i]);
-        replace_big_ints_to_small_ones(symbols, vec[i], symbol_mapping);
-
-    }
-
-    return vec;
-}
-
-vector<string> read_permutations(string filename) {
-
-    ifstream permutations(filename);
-
-
-    vector<string> str_vec;
-    str_vec.reserve(PERMUTATION_OF_SEVEN);
-
-
-    string str; 
-    while (getline(permutations, str))
-    {
-        str_vec.push_back(str);
-    }
-    str_vec.erase(str_vec.begin());
-
-    return str_vec;
-}
-
-int hamming_distance(vector<int> &v1, vector<int> &v2) {
-
-    assert(v1.size() == v2.size());
-
-    int res = 0;
-    for(int i = 0; i < v1.size(); i++) {
-        res += static_cast<int>(v1[i] != v2[i]);
-    }
-    return res;
-}
-
-int offset(vector<int> &v1, vector<int> &v2) {
-    
-    assert(v1.size() == v2.size());
-
-    int res = v1.size();
-    for(int i = 0; i < v1.size(); i++) {
-        vector<int> p1 = vector<int>(v1.begin() + i, v1.end());
-        vector<int> p2 = vector<int>(v2.begin(), v2.end() - i);
-        if(hamming_distance(p1, p2) == 0) {
-            res = i;
-            break;
-        }
-    }
-
-    return res;
-}
-
-void calculate_distance_matrix(vector<vector<int>> &permutations, vector<vector<int>> &distance_matrix) {
-
-    for(int i = 0; i < permutations.size(); i++) {
-        for(int j = 0; j < permutations.size(); j++) {
-            distance_matrix[i][j] = offset(permutations[i], permutations[j]);
-        }
-    }
-}
-
-vector<int> get_base_permutation(int n) {
-
-    vector<int> base(n, 0);
-    iota(base.begin(), base.end(), 0);
-    return base;
-}
-
-vector<vector<int>> get_permutations(int n) {
-
-    int fn = factorial(n);
-    vector<vector<int>> vec;
-
-    vector<int> base = get_base_permutation(n);
-
-    do {
-        vec.push_back(base);
-    } while(std::next_permutation(base.begin(), base.end()));
-
-    return vec;
-}
-
-
-int energy_left(vector<int> &initial_state,
-           vector<vector<int>> &distance_matrix) {
-
-    int e = 0;
-    int n = initial_state.size();
-    for(int i = 1; i < n; i++) {
-        // cout << "Adding: " << distance_matrix[initial_state[i-1]][initial_state[i]] << " " << initial_state[i-1] << " " << initial_state[i] << endl;
-        e += distance_matrix[initial_state[i-1]][initial_state[i]];
-    }
-    // cout << "Adding: " << distance_matrix[initial_state[0]][initial_state[n-1]] << " " << initial_state[0] << " " << initial_state[n-1] << endl;
-    // e += distance_matrix[initial_state[0]][initial_state[n-1]];
-    return e;
-}
-
-int energy_right(vector<int> &initial_state,
-                 vector<vector<int>> &distance_matrix) {
-
-    int e = 0;
-    int n = initial_state.size();
-    for(int i = n-2; i >= 0; i--) {
-        // cout << "Adding: " << distance_matrix[initial_state[i]][initial_state[i+1]] << " " << i << " " << i+1 << endl;
-        e += distance_matrix[initial_state[i]][initial_state[i+1]];
-    }
-    // cout << "Adding: " << distance_matrix[initial_state[0]][initial_state.size()-1] << endl;
-    // e += distance_matrix[initial_state[n-1]][initial_state[0]];
-    return e;
-}
-
-int energy_delta(vector<int> &initial_state,
-                 vector<vector<int>> &distance_matrix,
-                 pair<int,int> &swaps,
-                 int current_energy) {
-
-    int n = initial_state.size();
-
-    int j1 = swaps.first;
-    int j2 = swaps.second;
-
-    if(j1 > j2) {
-        swap(j1, j2);
-    }
-
-    // cout << "j1: " << j1 << " j2: " << j2 << endl;
-    int p1 = initial_state[(j1 - 1) % n];
-    int p2 = initial_state[j1];
-    int p3 = initial_state[(j1 + 1) % n];
-
-    int q1 = initial_state[(j2 - 1) % n];
-    int q2 = initial_state[j2];
-    int q3 = initial_state[(j2 + 1) % n];
-
-    if( j1 != 0 and j2 != n-1 and j2 - j1 != 1) {
-
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
-
-        current_energy -= distance_matrix[q1][q2];
-        current_energy -= distance_matrix[q2][q3];
-
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p3];
-
-        current_energy += distance_matrix[q1][p2];
-        current_energy += distance_matrix[p2][q3];
-
-    } else if( j1 != 0 and j2 != n-1 and j2 - j1 == 1 ) {
-
-        // cout << "Here 1" << endl;
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q2][q3];
-
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p2];
-        current_energy += distance_matrix[p2][q3];
-
-    } else if (j1 == 0 and j2 == n-1) {
-
-        // cout << "Here 2" << endl;
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q1][q2];
-
-        current_energy += distance_matrix[q2][p3];
-        current_energy += distance_matrix[q1][p2];
-
-    } else if (j1 != 0 and j2 == n-1 and j2 - j1 != 1) {
-
-        // cout << "Here 3" << endl;
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q1][q2];
-
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p3];
-        current_energy += distance_matrix[q1][p2];
-
-    } else if (j1 == 0 and j2 - j1 == 1) {
-
-        // cout << "Here 4" << endl;
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q2][q3];
-
-        current_energy += distance_matrix[q2][p2];
-        current_energy += distance_matrix[p2][q3];
-        return current_energy;  
-
-    } else if (j2 == n - 1 and j2 - j1 == 1) {
-
-        // cout << "Here 4.5" << endl;
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
-
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p2];
-
-    } else if (j1 == 0 and j2 != n-1) {
-
-        // cout << "Here 5" << endl;
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q1][q2];
-        current_energy -= distance_matrix[q2][q3];
-
-        current_energy += distance_matrix[q2][p3];
-        current_energy += distance_matrix[q1][p2];
-        current_energy += distance_matrix[p2][q3];
-
-    } else {
-
-        // cout << "Here 6" << endl;
-        // printf("p1: %d p2 %d p3 %d q1 %d q2 %d q3 %d\n", p1, p2, p3, q1, q2, q3);
-
-        // printf("p1 -> p2 => %d -> %d: %d\n", p1, p2, distance_matrix[p1][p2]);
-        // printf("p2 -> p3 => %d -> %d: %d\n", p2, p3, distance_matrix[p2][p3]);
-        // printf("q1 -> q2 => %d -> %d: %d\n", q1, q2, distance_matrix[q1][q2]);
-        // printf("q2 -> q3 => %d -> %d: %d\n", q2, q3, distance_matrix[q2][q3]);
-
-        // printf("p1 -> q2 => %d -> %d: %d\n", p1, q2, distance_matrix[p1][q2]);
-        // printf("q2 -> p3 => %d -> %d: %d\n", q2, p3, distance_matrix[q2][p3]);
-        // printf("q1 -> p2 => %d -> %d: %d\n", q1, p2, distance_matrix[q1][p2]);
-        // printf("p1 -> q2 => %d -> %d: %d\n", p2, q3, distance_matrix[p2][q3]);
-
-        cout << "Something went very wrong!" << endl;
-        assert(false);
-    }
-
-
-
-    return current_energy;
-}
-
-void run_metropolis(vector<int> &initial_state,
-                    vector<vector<int>> &distance_matrix,
-                    int k_max = 100) {
-
-    int n = initial_state.size();
-    
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<int> uniform_integers(0, n-1);
-    uniform_real_distribution<long double> uniform_reals(0.0, 1.0);
-
-    long double d_k_max = static_cast<long double>(k_max);
-    int e = energy_left(initial_state, distance_matrix);
-    cout << "Starting energy: " << e << endl;
-    for(int k = 0; k < k_max; k++) {
-        // cout << " --- --- --- --- --- " << endl;
-
-        int i = 0;
-        int j = 0;
-
-        while(i == j) {
-            i = uniform_integers(gen);
-            j = uniform_integers(gen);
-        }
-
-        pair<int, int> p = {i, j};
-
-        int ed = energy_delta(initial_state, distance_matrix, p, e);
-
-        // cout << "i = " << i << " j = " << j << " k = " << k << " e = " << e << " ed = " << ed << endl;
-
-        if( ed < e) {
-            swap(initial_state[i], initial_state[j]);
-            e = ed;
-            // int ev = energy_left(initial_state, distance_matrix);
-
-            // cout << "State accepted - energy validation: " << ev << endl;
-            // assert(e == ev);
-
-            // print_vector(initial_state);
-        } else {
-
-            long double T = 1 - static_cast<long double>(k)/d_k_max;
-            long double d = exp( - (double(ed) - double(e)) / T );
-            long double r = uniform_reals(gen);
-
-            // cout << "T = " << T << " d = " << d << " r = " << r << endl;
-
-            if(r < d) {
-                swap(initial_state[i], initial_state[j]);
-                e = ed;
-                // cout << "State accepted - energy validation: " << energy_left(initial_state, distance_matrix) << endl;
-                // print_vector(initial_state);
-            }
-
-        }
-    }
-
-    cout << "Final state has energy: " << e << " and is equal to:" << endl;
-    print_vector(initial_state);
-
-}
 
 void assert_energy_calculation(vector<int> &state,
                                vector<vector<int>> &matrix,
@@ -484,7 +97,228 @@ void verify_energy() {
 
 }
 
+
+MarkedPermutationsLimits mark_permutations(vector<vector<int>> &permutations,
+                                           vector<int> &condition) {
+
+    vector<int> necessary_permutations(permutations.size(), 0);
+
+    assert(permutations.front().size() > condition.size());
+
+    int ones = 0;
+    for(int i = 0; i < permutations.size(); i++) {
+
+        bool is_ok = true;
+        for(int j = 0; j < condition.size(); j++) {
+            if(permutations[i][j] != condition[j]) {
+                is_ok = false;
+                break;
+            }
+        }
+
+        if(is_ok == true){
+            necessary_permutations[i] = 1;
+            ones++;
+        }
+    }
+
+    bool is_contigous = false;
+    
+    int start = -1;
+    int stop = -1;
+    for(int i = 0; i < necessary_permutations.size(); i++) {
+        if(necessary_permutations[i] == 1) {
+            start = i;
+            break;
+        }
+    }
+
+    for(int i = necessary_permutations.size()-1; i >= 0; i--) {
+        if(necessary_permutations[i] == 1) {
+            stop = i;
+            break;
+        }
+    }
+
+    printf("start: %d stop %d ones: %d\n", start, stop, ones);
+
+    if(stop - start + 1 == ones){
+        is_contigous = true;
+    }
+
+    assert(is_contigous == true);
+
+       
+    return MarkedPermutationsLimits{start, stop};
+}
+
+
+void mark_left_neighbour_in_first_chain_link(vector<Link> &chain, int string_id, int value) {
+    
+    for(int i = 0; i < chain.size(); i++) {
+        if(chain[i].string_id == string_id) {
+            chain[i].left = value;
+            break;
+        }
+    }
+}
+
+void mark_right_neighbour_in_last_chain_link(vector<Link> &chain, int string_id, int value) {
+    
+    for(int i = chain.size()-1; i >= 0 ; i--) {
+        if(chain[i].string_id == string_id) {
+            chain[i].right = value;
+            break;
+        }
+    }
+}
+
+vector<Link> create_permutation_chain(vector<vector<int>> &permutations,
+                                      MarkedPermutationsLimits &mpl,
+                                      int number_of_sub_chains) {
+
+    int n = permutations.size();
+    vector<Link> chain;
+    chain.reserve(n);
+
+    for(int i = 1; i <= number_of_sub_chains-1; i++) {
+        for(int j = mpl.start; j <= mpl.stop; j++) {
+
+            chain.push_back(Link{j, i, -1, -1});
+
+        }
+    }
+
+
+    for(int i = 0; i < n; i++) {
+        chain.push_back(Link{i, number_of_sub_chains, -1, -1});
+    }
+
+    chain.shrink_to_fit();
+
+    for(int i = 1; i <= number_of_sub_chains; i++) {
+        for(int j = 0; j < chain.size(); j++) {
+
+            if(chain[j].string_id != i)
+                continue;
+
+            chain[j].left = j - 1;
+            chain[j].right = j + 1;
+        }
+    }
+
+    for(int i = 1; i <= number_of_sub_chains; i++) {
+        mark_left_neighbour_in_first_chain_link(chain, i, -1);
+        mark_right_neighbour_in_last_chain_link(chain, i, -1);
+    }
+
+    return chain;
+} 
+
+
+// bool swap_links(vector<Link> &chain, MarkedPermutationsLimits &mpl, int l1, int l2) {
+    
+//     if(chain[l1].string_id == chain[l2].string_id) {
+//         swap(chain[l1].permutation_id, chain[l2].permutation_id);
+//         return true;
+//     } else {
+
+//         if( (mpl.start <= chain[l1].permutation_id and chain[l1].permutation_id <= mpl.stop) or 
+//             (mpl.start <= chain[l2].permutation_id and chain[l2].permutation_id <= mpl.stop) ) {
+//                 return false;
+//         }
+
+//         swap(chain[l1].permutation_id, chain[l2].permutation_id);
+//         swap(chain[l1].string_id, chain[l2].string_id);
+
+        
+
+//     }
+// }
+
+int sub_chain_energy_left(vector<Link> &initial_state,
+                          vector<vector<int>> &distance_matrix,
+                          int chain_id) {
+
+    return 0;
+}
+
+int chain_energy_left(vector<Link> &initial_state,
+                      vector<vector<int>> &distance_matrix,
+                      int number_of_sub_chains) {
+
+    
+    int e = 0;
+
+    for(int i = 1; i <= number_of_sub_chains; i++) {
+
+    }
+
+
+    return 0;
+
+}
+
+
+void run_metropolis_on_chain(vector<Link> &initial_state,
+                             vector<vector<int>> &distance_matrix,
+                             int number_of_sub_chains,
+                             int k_max = 100) {
+
+    int n = initial_state.size();
+    
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<int> uniform_integers(0, n-1);
+    uniform_real_distribution<long double> uniform_reals(0.0, 1.0);
+
+    long double d_k_max = static_cast<long double>(k_max);
+    int e = chain_energy_left(initial_state, distance_matrix, number_of_sub_chains);
+    cout << "Starting energy: " << e << endl;
+    for(int k = 0; k < k_max; k++) {
+
+    }
+
+    cout << "Final state has energy: " << e << " and is equal to:" << endl;
+    print_vector(initial_state);
+
+}
+
+
+
 int main() {
+
+    // verify_energy();
+
+    // int n = 4;
+    // vector<vector<int>> permutations = get_permutations(n);
+    // vector<vector<int>> distance_matrix(permutations.size(), vector<int>(permutations.size() , 0));
+    // calculate_distance_matrix(permutations, distance_matrix);
+    
+    // int m = factorial(n);
+    // vector<int> initial_state(m, 0);
+    // iota(initial_state.begin(), initial_state.end(), 0);
+
+    // int k_max = 20000000;
+
+    // cout << "Running for n = " << n << endl;
+
+    // chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    // run_metropolis(initial_state, distance_matrix, k_max);
+    // chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
+
+    // cout << "Elapsed time: " << chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " [s]" << std::endl;
+
+    // // print_matrix(permutations);
+
+    // vector<int> sp = get_super_permutation(initial_state, distance_matrix, permutations);
+    // print_vector(sp);
+
+    // cout << "Super permutation size: " << sp.size() << endl;
+
+
+    //----------------------------------------------------------------
+
 
     // vector<string> str_vec = read_permutations("permutations.csv");
 
@@ -505,7 +339,15 @@ int main() {
 
     // assert(permutations.size() == PERMUTATION_OF_SEVEN);
 
-    verify_energy();
+    // print_vector(permutations[0]);
+    // print_vector(permutations[1]);
+
+    // vector<vector<int>> distance_matrix(permutations.size(), vector<int>(permutations.size() , 0));
+    // calculate_distance_matrix(permutations, distance_matrix);
+
+
+    // -----------------------------------------------------------------------------------------------
+
 
     int n = 4;
     vector<vector<int>> permutations = get_permutations(n);
@@ -516,16 +358,34 @@ int main() {
     vector<int> initial_state(m, 0);
     iota(initial_state.begin(), initial_state.end(), 0);
 
-    int k_max = 50000000;
 
-    cout << "Running for n = " << n << endl;
+    print_matrix(permutations);
 
-    chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    run_metropolis(initial_state, distance_matrix, k_max);
-    chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
+    vector<int> condition = {2, 1};
+    MarkedPermutationsLimits mpl = mark_permutations(permutations, condition);
 
-    cout << "Elapsed time: " << chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " [µs]" << std::endl;
+    cout << "Mpl: " << mpl << endl;
 
-    // print_matrix(permutations);
+    int number_of_sub_chains = 3;
+    vector<Link> chain = create_permutation_chain(permutations, mpl, number_of_sub_chains);
+
+    
+    run_metropolis_on_chain(chain, distance_matrix, number_of_sub_chains);
+
+    
+    // for(int i = 0; i < chain.size(); i++) {
+    //     cout << "i: " << i << " " << chain[i] << endl;
+    // }
+
+    // int x = 2;
+    // int y = 4;
+    // // swap_links(chain, mpl, x, y);
+
+    // cout << " --- " << endl;
+
+    // for(int i = 0; i < chain.size(); i++) {
+    //     cout << "i: " << i << " " << chain[i] << endl;
+    // }
+
 
 }
