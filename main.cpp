@@ -173,6 +173,26 @@ void mark_right_neighbour_in_last_chain_link(vector<Link> &chain, int string_id,
     }
 }
 
+void mark_left_neighbour_in_first_chain_link_ptr(vector<Link> &chain, int string_id, Link *left) {
+    
+    for(int i = 0; i < chain.size(); i++) {
+        if(chain[i].string_id == string_id) {
+            chain[i].m_left = left;
+            break;
+        }
+    }
+}
+
+void mark_right_neighbour_in_last_chain_link_ptr(vector<Link> &chain, int string_id, Link *right) {
+    
+    for(int i = chain.size()-1; i >= 0 ; i--) {
+        if(chain[i].string_id == string_id) {
+            chain[i].m_right = right;
+            break;
+        }
+    }
+}
+
 vector<Link> create_permutation_chain(vector<vector<int>> &permutations,
                                       MarkedPermutationsLimits &mpl,
                                       int number_of_sub_chains) {
@@ -216,6 +236,49 @@ vector<Link> create_permutation_chain(vector<vector<int>> &permutations,
 } 
 
 
+vector<Link> create_permutation_chain_ptr(vector<vector<int>> &permutations,
+                                          MarkedPermutationsLimits &mpl,
+                                          int number_of_sub_chains) {
+
+    int n = permutations.size();
+    vector<Link> chain;
+    chain.reserve(n);
+
+    for(int i = 1; i <= number_of_sub_chains-1; i++) {
+        for(int j = mpl.start; j <= mpl.stop; j++) {
+
+            chain.push_back(Link{j, i, nullptr, nullptr});
+
+        }
+    }
+
+
+    for(int i = 0; i < n; i++) {
+        chain.push_back(Link{i, number_of_sub_chains, nullptr, nullptr});
+    }
+
+    chain.shrink_to_fit();
+
+    for(int i = 1; i <= number_of_sub_chains; i++) {
+        for(int j = 0; j < chain.size(); j++) {
+
+            if(chain[j].string_id != i)
+                continue;
+
+            chain[j].m_left = &chain[j - 1];
+            chain[j].m_right = &chain[j + 1];
+        }
+    }
+
+    for(int i = 1; i <= number_of_sub_chains; i++) {
+        mark_left_neighbour_in_first_chain_link_ptr(chain, i, nullptr);
+        mark_right_neighbour_in_last_chain_link_ptr(chain, i, nullptr);
+    }
+
+    return chain;
+} 
+
+
 // bool swap_links(vector<Link> &chain, MarkedPermutationsLimits &mpl, int l1, int l2) {
     
 //     if(chain[l1].string_id == chain[l2].string_id) {
@@ -236,11 +299,24 @@ vector<Link> create_permutation_chain(vector<vector<int>> &permutations,
 //     }
 // }
 
-int sub_chain_energy_left(vector<Link> &initial_state,
+int sub_chain_energy_left(vector<Link> &state,
                           vector<vector<int>> &distance_matrix,
                           int chain_id) {
 
-    return 0;
+    int e = 0;
+    for(int i = 0; i < state.size(); i++) {
+
+        Link *central = &state[i];
+
+        // Link *left = nullptr;
+        // if(i - 1 >= 0 && central->is_left_present()) {
+        //     left = &state[ distance_matrix[state[i-1]] ];
+        // }
+
+
+    }
+
+    return e;
 }
 
 int chain_energy_left(vector<Link> &initial_state,
@@ -367,15 +443,15 @@ int main() {
     cout << "Mpl: " << mpl << endl;
 
     int number_of_sub_chains = 3;
-    vector<Link> chain = create_permutation_chain(permutations, mpl, number_of_sub_chains);
+    vector<Link> chain = create_permutation_chain_ptr(permutations, mpl, number_of_sub_chains);
 
     
     run_metropolis_on_chain(chain, distance_matrix, number_of_sub_chains);
 
     
-    // for(int i = 0; i < chain.size(); i++) {
-    //     cout << "i: " << i << " " << chain[i] << endl;
-    // }
+    for(int i = 0; i < chain.size(); i++) {
+        cout << "i: " << i << " " << chain[i] << endl;
+    }
 
     // int x = 2;
     // int y = 4;
