@@ -1,5 +1,6 @@
 #include <bits/stdc++.h> 
 #include "energy_calculation.hpp"
+#include "helper_functions.hpp"
 
 using namespace std;
 

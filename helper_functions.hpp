@@ -4,6 +4,12 @@
 
 using namespace std;
 
+int hamming_distance(vector<int> &v1, vector<int> &v2);
+
+int offset(vector<int> &v1, vector<int> &v2);
+
+void calculate_distance_matrix(vector<vector<int>> &permutations, vector<vector<int>> &distance_matrix);
+
 int factorial(int n);
 
 void convert_four_char_string_to_four_uint8(string &four_char_string);
@@ -40,4 +46,34 @@ template<typename T> void print_matrix(vector<vector<T>> &mat) {
     for(int i = 0; i < mat.size(); i++) {
         print_vector(mat[i]);
     }
+}
+
+
+template<typename T> void print_chain(vector<T> &state) {
+    for(int i = 0; i < state.size(); i++) {
+        cout << "i = " << i << " : " << state[i] << endl;
+    }
+}
+
+
+template<typename T> void print_chain_sequence(vector<T> &state, int string_id) {
+
+    T *start = nullptr;
+    T *stop = nullptr;
+
+    for(int i = 0; i < state.size(); i++) {
+        if(state[i].string_id == string_id) {
+            if(state[i].m_left == nullptr) {
+                start = &state[i];
+                break;
+            }
+        }
+    }
+
+    while(start->m_right != nullptr) {
+        cout << *start << " ";
+        start = start->m_right;
+    }
+    cout << *start << endl;
+
 }

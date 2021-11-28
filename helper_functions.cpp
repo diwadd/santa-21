@@ -12,6 +12,50 @@ int factorial(int n) {
     return res;
 }
 
+int hamming_distance(vector<int> &v1, vector<int> &v2) {
+
+    assert(v1.size() == v2.size());
+
+    int res = 0;
+    for(int i = 0; i < v1.size(); i++) {
+        res += static_cast<int>(v1[i] != v2[i]);
+    }
+    return res;
+}
+
+
+int offset(vector<int> &v1, vector<int> &v2) {
+    
+    assert(v1.size() == v2.size());
+
+    int res = v1.size();
+    for(int i = 0; i < v1.size(); i++) {
+        vector<int> p1 = vector<int>(v1.begin() + i, v1.end());
+        vector<int> p2 = vector<int>(v2.begin(), v2.end() - i);
+        if(hamming_distance(p1, p2) == 0) {
+            res = i;
+            break;
+        }
+    }
+
+    return res;
+}
+
+
+void calculate_distance_matrix(vector<vector<int>> &permutations, vector<vector<int>> &distance_matrix) {
+
+    for(int i = 0; i < permutations.size(); i++) {
+        
+        if(i % 100 == 0) {
+            cout << "In distance matrix, i = " << i << endl;
+        }
+
+        for(int j = 0; j < permutations.size(); j++) {
+            distance_matrix[i][j] = offset(permutations[i], permutations[j]);
+        }
+    }
+}
+
 
 void convert_four_char_string_to_four_uint8(string &four_char_string) {
 
@@ -136,7 +180,7 @@ vector<int> get_super_permutation(vector<int> &initial_state,
     // Converts the initital_state into a human readable super permutation.
 
     vector<int> sp = permutations[initial_state.front()];
-    print_vector(sp);
+    // print_vector(sp);
     for(int i = 1; i < initial_state.size(); i++) {
 
         vector<int> &p = permutations[initial_state[i]];
