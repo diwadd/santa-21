@@ -22,16 +22,16 @@ struct Link {
         // cout << "Link copy" << endl;
         permutation_id = l1.permutation_id;
         string_id = l1.string_id;
-        // left = l1.left;
-        // right = l1.right;
+        m_left = l1.m_left;
+        m_right = l1.m_right;
     }
 
     Link& operator=(Link &l1) {
         // cout << "Link operator=" << endl;
         permutation_id = l1.permutation_id;
         string_id = l1.string_id;
-        // left = l1.left;
-        // right = l1.right;
+        m_left = l1.m_left;
+        m_right = l1.m_right;
         return *this;
     }
 };

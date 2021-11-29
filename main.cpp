@@ -159,7 +159,7 @@ void run_metropolis_on_chain(vector<Link> &initial_state,
     cout << "Total energy: " << accumulate(energy.begin(), energy.end(), 0) << endl;
     for(uint64_t k = 0; k < k_max; k++) {
 
-        if(k % 1000'000 == 0) {
+        if(k % 1'000'000'000 == 0) {
             cout << "k : " << k << " current_max_energy: " << current_max_energy << endl;
         }
 
@@ -177,52 +177,27 @@ void run_metropolis_on_chain(vector<Link> &initial_state,
 
         if(op == OperationType::swap) {
 
-            // cout << "OperationType::swap" << endl;
             int current_string_id = initial_state[i].string_id;
-            
-            // print_chain(initial_state);
-            
             int ed = energy_delta_for_swap(initial_state, distance_matrix, energy[current_string_id], p);
 
-            // cout << "--- k = " << k << " i = " << i << " j = " << j << " current_string_id:  " << current_string_id << " ed: " << ed <<  " ---" << endl;
-
-            //swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
-
             if(ed < 0) {
-                // cout << "Energy is wrong!" << endl;
+                cout << "Energy is wrong!" << endl;
                 print_chain(initial_state);
                 assert(false);
             }
 
             vector<int> new_energy = energy;
             new_energy[current_string_id] = ed;
-            // cout << "Old energy vector: ";
-            // print_vector(energy);
-            // cout << "New energy vector: ";
-            // print_vector(new_energy);
 
             int new_max_energy = get_max_enegry(new_energy); 
 
             if( new_max_energy < current_max_energy ) {
-
-                // cout << " --- Before swap --- " << endl;
-                // print_chain(initial_state);
-                // print_chain_sequence(initial_state, current_string_id);
-                // cout << " --- --- --- " << endl;
 
                 swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
 
 
                 energy[current_string_id] = ed;
                 current_max_energy = new_max_energy;
-
-                // perform_link_swap(initial_state, p);
-
-                // cout << " --- After swap --- " << endl;
-                // print_chain(initial_state);
-                // print_chain_sequence(initial_state, current_string_id);
-                // cout << " --- --- --- " << endl;
-
 
             } else {
 
@@ -232,18 +207,7 @@ void run_metropolis_on_chain(vector<Link> &initial_state,
 
                 if(r < d) {
 
-                    // cout << " --- Before swap --- " << endl;
-                    // print_chain(initial_state);
-                    // print_chain_sequence(initial_state, current_string_id);
-                    // cout << " --- --- --- " << endl;
-
-                    // perform_link_swap(initial_state, p);
                     swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
-
-                    // cout << " --- After swap --- " << endl;
-                    // print_chain(initial_state);
-                    // print_chain_sequence(initial_state, current_string_id);
-                    // cout << " --- --- --- " << endl;
 
                     energy[current_string_id] = ed;
                     current_max_energy = new_max_energy;
@@ -258,8 +222,6 @@ void run_metropolis_on_chain(vector<Link> &initial_state,
                     continue;
             }
 
-            // cout << "OperationType::transfer" << endl;
-
             int si = initial_state[i].string_id;
             int sj = initial_state[j].string_id;
 
@@ -270,15 +232,9 @@ void run_metropolis_on_chain(vector<Link> &initial_state,
             new_energy[si] = epd.first;
             new_energy[sj] = epd.second;
 
-            // cout << "Old energy vector: ";
-            // print_vector(energy);
-            // cout << "New energy vector: ";
-            // print_vector(new_energy);
-
             int new_max_energy = get_max_enegry(new_energy); 
 
             if(new_max_energy < current_max_energy) {
-                // cout << "Taken" << endl;
 
                 energy[si] = epd.first;
                 energy[sj] = epd.second;
@@ -293,8 +249,6 @@ void run_metropolis_on_chain(vector<Link> &initial_state,
                 long double r = uniform_reals(gen);
 
                 if(r < d) {
-
-                    // cout << "Taken" << endl;
 
                     energy[si] = epd.first;
                     energy[sj] = epd.second;
@@ -338,16 +292,9 @@ vector<int> get_string_with_specific_id(vector<Link> &state, int string_id) {
     return permutation_string_rep;
 }
 
-vector<vector<int>> validate_state(vector<Link> &state, MarkedPermutationsLimits &mpl, int number_of_sub_strings, int n_permutations) {
+vector<vector<int>> validate_state_and_get_permutation_strings(vector<Link> &state, MarkedPermutationsLimits &mpl, int number_of_sub_strings, int n_permutations) {
 
     vector<vector<int>> permutation_strings(number_of_sub_strings+1, vector<int>());
-
-    // for(int i = 1; i <= number_of_sub_strings; i++) {
-    //     // permutation_strings[i] = get_string_with_specific_id(state, i);
-    //     // sort(permutation_strings[i].begin(), permutation_strings[i].end());
-    //     // print_vector(permutation_strings[i]);
-    // }
-
     vector<int> permutations(n_permutations, 0);
 
     for(int i = 1; i <= number_of_sub_strings; i++) {
@@ -364,126 +311,139 @@ vector<vector<int>> validate_state(vector<Link> &state, MarkedPermutationsLimits
 
     }
 
-
     for(int i = 0; i < permutations.size(); i++) {
         if(permutations[i] == 0)
             assert(false);
     }
 
-
     return permutation_strings;
 }
 
 
-int main() {
+void read_submission_and_prepare_chain(string filename_chain_raw,
+                                       vector<Link> &chain,
+                                       int number_of_sub_chains) {
 
-    // verify_energy();
+    ifstream permutations(filename_chain_raw);
 
-    // int n = 4;
-    // vector<vector<int>> permutations = get_permutations(n);
-    // vector<vector<int>> distance_matrix(permutations.size(), vector<int>(permutations.size() , 0));
-    // calculate_distance_matrix(permutations, distance_matrix);
-    
-    // int m = factorial(n);
-    // vector<int> initial_state(m, 0);
-    // iota(initial_state.begin(), initial_state.end(), 0);
-
-    // int k_max = 20000000;
-
-    // cout << "Running for n = " << n << endl;
-
-    // chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    // run_metropolis(initial_state, distance_matrix, k_max);
-    // chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
-
-    // cout << "Elapsed time: " << chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " [s]" << std::endl;
-
-    // // print_matrix(permutations);
-
-    // vector<int> sp = get_super_permutation(initial_state, distance_matrix, permutations);
-    // print_vector(sp);
-
-    // cout << "Super permutation size: " << sp.size() << endl;
-
-
-    //----------------------------------------------------------------
-
-
-    // vector<string> str_vec = read_permutations("permutations.csv");
-
-    // map<uint32_t, int> symbol_mapping = { {2240716784, 1},    // Santa
-    //                                       {3064242160, 2},    // His wife
-    //                                       {2359730160, 3},    // Reindeer
-    //                                       {2645008368, 4},    // Elf
-    //                                       {2223939568, 5},    // Christmas tree
-    //                                       {2173607920, 6},    // Present
-    //                                       {2156830704, 7} };  // Ribon
-
-    // vector<uint32_t> symbols = convert_string(str_vec.front());
-    // for(auto & s : symbols) {
-    //     cout << dec << s << endl;
-    // }
-
-    // vector<vector<int>> permutations = convert_string_permutations_to_int_ones(str_vec, symbol_mapping);
-
-    // assert(permutations.size() == PERMUTATION_OF_SEVEN);
-
-    // print_vector(permutations[0]);
-    // print_vector(permutations[1]);
-
-    // vector<vector<int>> distance_matrix(permutations.size(), vector<int>(permutations.size() , 0));
-    // calculate_distance_matrix(permutations, distance_matrix);
-
-
-    // -----------------------------------------------------------------------------------------------
-
-
-    int n = 7;
-    vector<vector<int>> permutations = get_permutations(n);
-    vector<vector<int>> distance_matrix(permutations.size(), vector<int>(permutations.size() , 0));
-    calculate_distance_matrix(permutations, distance_matrix);
-    
-    cout << "Distance ok" << endl;
-
-    int m = factorial(n);
-    vector<int> initial_state(m, 0);
-    iota(initial_state.begin(), initial_state.end(), 0);
-
-
-    print_matrix(permutations);
-
-    vector<int> condition = {4, 3};
-    MarkedPermutationsLimits mpl = mark_permutations(permutations, condition);
-
-    int number_of_sub_chains = 3;
-    vector<Link> chain = create_permutation_chain_ptr(permutations, mpl, number_of_sub_chains);
-
-    uint64_t k_max = 1000'000'000'000'000;
-    run_metropolis_on_chain(chain, distance_matrix, mpl, number_of_sub_chains, k_max);
-
-
-    vector<int> stats(number_of_sub_chains + 1, 0);
-    for(int i = 0; i < chain.size(); i++) {
-        // cout << "i: " << i << " " << chain[i] << endl;
-        stats[chain[i].string_id]++;
+    if(permutations.is_open() == false) {
+        cout << "No file found" << endl;
+        return;
     }
 
-    print_vector(stats);
 
-    cout << "Mpl: " << mpl << endl;
-    vector<vector<int>> permutation_strings = validate_state(chain, mpl, number_of_sub_chains, m);
+    vector<string> str_vec;
+
+    string str; 
+    while (getline(permutations, str))
+    {
+        str_vec.push_back(str);
+    }
+
+    assert(str_vec.size() == number_of_sub_chains);
+
+    vector<vector<int>> simple_permutation_ids_chains(number_of_sub_chains, vector<int>());
+
+    // Convert vector of strings 12,13,14,2423,124,1,2 to a normal vector of vectors of int.
+    for(int i = 0; i < str_vec.size(); i++) {
+        string s = "";
+        for(int j = 0; j < str_vec[i].size(); j++) {
+            if(str_vec[i][j] != ','){
+                s += str_vec[i][j];
+            } else if(str_vec[i][j] == ',' || str_vec[i][j] == '\n') {
+                simple_permutation_ids_chains[i].push_back(stoi(s));
+                s = "";
+            }
+        }
+        simple_permutation_ids_chains[i].push_back(stoi(s));
+    }
+
+    // print_matrix(simple_permutation_ids_chains);
+
+    // print_vector(str_vec);
+    // cout << "str_vec.size(): " << str_vec.size() << endl;
+
+    chain.clear();
+    cout << "chain.size(): " << chain.size() << endl;
+
+    for(int i = 1; i <= number_of_sub_chains; i++) {
+        int p = simple_permutation_ids_chains[i-1][0];
+        chain.push_back(Link{p, i, nullptr, nullptr});
+        for(int j = 1; j < simple_permutation_ids_chains[i-1].size(); j++) {
+            p = simple_permutation_ids_chains[i-1][j];
+            chain.push_back(Link{p, i, nullptr, nullptr});
+        }
+    }
+
+    chain.shrink_to_fit();
+
+    for(int i = 1; i <= number_of_sub_chains; i++) {
+
+        int start = 0;
+        int stop = 0;
+
+        for(int j = 0; j < chain.size(); j++) {
+            if(chain[j].string_id == i) {
+                start = j;
+                break;
+            }
+        }
+
+        for(int j = chain.size()-1; j >= 0; j--) {
+            if(chain[j].string_id == i) {
+                stop = j;
+                break;
+            }
+        }
+
+        for(int j = start+1; j <= stop; j++) {
+            // cout << "Setting pointers..." << endl;
+            chain[j].m_left = &chain[j-1];
+            chain[j-1].m_right = &chain[j];
+        }
+    }
+
+    cout << "Chain from file" << endl;
+}
+
+
+void prepare_and_save_submission(string filename_chain_raw,
+                                 string filename_solution_raw,
+                                 vector<vector<int>> &permutations,
+                                 vector<Link> &chain,
+                                 vector<vector<int>> &distance_matrix,
+                                 MarkedPermutationsLimits &mpl,
+                                 int number_of_sub_chains,
+                                 int m) {
+
+    vector<vector<int>> permutation_strings = validate_state_and_get_permutation_strings(chain, mpl, number_of_sub_chains, m);
 
     vector<vector<int>> super_permutations(number_of_sub_chains+1, vector<int>());
 
+    ofstream chain_raw;
+    chain_raw.open(filename_chain_raw);
+
     for(int i = 1; i < permutation_strings.size(); i++) {
+
+        string s = "";
+        for(int j = 0; j < permutation_strings[i].size(); j++) {
+            if(j != permutation_strings[i].size() -1 )
+                s += to_string(permutation_strings[i][j]) + ",";
+            else
+                s += to_string(permutation_strings[i][j]);
+        }
+        s += "\n";
+        chain_raw << s;
+
         vector<int> sp = get_super_permutation(permutation_strings[i], distance_matrix, permutations);
         cout << "Super permutation length: " << sp.size() << endl;
-        // print_vector(sp);
         super_permutations[i] = sp;
     }
 
+    chain_raw.close();
+
     ofstream solution_raw;
-    solution_raw.open("solution_raw.txt");
+    solution_raw.open(filename_solution_raw);
 
     for(int i = 1; i < super_permutations.size(); i++) {
         string s = "";
@@ -495,5 +455,65 @@ int main() {
         solution_raw << s;
     }
     solution_raw.close();
+}
+
+
+int main() {
+
+    int n = 7;
+    
+    vector<vector<int>> permutations = get_permutations(n);
+    vector<vector<int>> distance_matrix(permutations.size(), vector<int>(permutations.size() , 0));
+    calculate_distance_matrix(permutations, distance_matrix);
+    
+    cout << "Distance ok" << endl;
+
+    int m = factorial(n);
+    vector<int> initial_state(m, 0);
+    iota(initial_state.begin(), initial_state.end(), 0);
+
+
+    // print_matrix(permutations);
+
+    vector<int> condition = {4, 3};
+    MarkedPermutationsLimits mpl = mark_permutations(permutations, condition);
+
+    int number_of_sub_chains = 3;
+
+    string filename_chain_raw = "chain_raw.txt";
+    string filename_solution_raw = "solution_raw.txt";
+    
+    vector<Link> chain = create_permutation_chain_ptr(permutations, mpl, number_of_sub_chains);
+
+    // read_submission_and_prepare_chain(filename_chain_raw, chain, number_of_sub_chains);
+
+    // print_chain(chain);
+
+    uint64_t k_max = 75'000'000'000;
+
+    chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    run_metropolis_on_chain(chain, distance_matrix, mpl, number_of_sub_chains, k_max);
+    chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
+
+    cout << "Elapsed time: " << chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " [s]" << std::endl;
+
+    vector<int> stats(number_of_sub_chains + 1, 0);
+    for(int i = 0; i < chain.size(); i++) {
+        // cout << "i: " << i << " " << chain[i] << endl;
+        stats[chain[i].string_id]++;
+    }
+
+    print_vector(stats);
+
+    cout << "Mpl: " << mpl << endl;
+
+    prepare_and_save_submission(filename_chain_raw,
+                                filename_solution_raw,
+                                permutations,
+                                chain,
+                                distance_matrix,
+                                mpl,
+                                number_of_sub_chains,
+                                m);
 
 }

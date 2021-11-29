@@ -45,11 +45,6 @@ int offset(vector<int> &v1, vector<int> &v2) {
 void calculate_distance_matrix(vector<vector<int>> &permutations, vector<vector<int>> &distance_matrix) {
 
     for(int i = 0; i < permutations.size(); i++) {
-        
-        if(i % 100 == 0) {
-            cout << "In distance matrix, i = " << i << endl;
-        }
-
         for(int j = 0; j < permutations.size(); j++) {
             distance_matrix[i][j] = offset(permutations[i], permutations[j]);
         }
