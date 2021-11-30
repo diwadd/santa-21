@@ -171,12 +171,18 @@ int sub_chain_energy_left(vector<Link> &state,
     return e;
 }
 
-OperationType get_operation_type(vector<Link> &initial_state, int i, int j) {
+OperationType get_operation_type(vector<Link> &initial_state, int i, int j, bool transfer) {
 
     if(initial_state[i].string_id == initial_state[j].string_id) {
         return OperationType::swap;
     } else {
+
         return OperationType::transfer;
+
+        // if(transfer == true)
+        //     return OperationType::transfer;
+        // else
+        //     return OperationType::transfer_swap;
     }
 
 }
@@ -462,6 +468,71 @@ void perform_link_swap(vector<Link> &state,
 
 }
 
+pair<int, int> energy_delta_for_transfer_swap(vector<Link> &state,
+                                              vector<vector<int>> &distance_matrix,
+                                              pair<int, int> e, 
+                                              pair<int,int> p) {
+    int current_energy_i = e.first;
+    int current_energy_j = e.second;
+
+    int i = p.first;
+    int j = p.second;
+
+    Link* p1 = state[i].m_left;
+    Link* p2 = &state[i];
+    Link* p3 = state[i].m_right;
+
+    Link* q1 = state[j].m_left;
+    Link* q2 = &state[j];
+    Link* q3 = state[j].m_right;
+
+    int delta_i_minus = 0;
+    int delta_j_minus = 0;
+
+    int delta_i_plus = 0;
+    int delta_j_plus = 0;
+
+    if(p1 != nullptr && p3 != nullptr) {
+        delta_i_minus += distance_matrix[p1->permutation_id][p2->permutation_id];
+        delta_i_minus += distance_matrix[p2->permutation_id][p3->permutation_id];
+
+        delta_j_plus += distance_matrix[p1->permutation_id][q2->permutation_id];
+        delta_j_plus += distance_matrix[q2->permutation_id][p3->permutation_id];
+    } else if(p1 == nullptr && p3 != nullptr) {
+        delta_i_minus += distance_matrix[p2->permutation_id][p3->permutation_id];
+
+        delta_j_plus += distance_matrix[q2->permutation_id][p3->permutation_id];
+    } else if(p1 != nullptr && p3 == nullptr) {
+        delta_i_minus += distance_matrix[p1->permutation_id][p2->permutation_id];
+
+        delta_j_plus += distance_matrix[p1->permutation_id][q2->permutation_id];
+    }
+
+    if(q1 != nullptr && q3 != nullptr) {
+        delta_j_minus += distance_matrix[q1->permutation_id][q2->permutation_id];
+        delta_j_minus += distance_matrix[q2->permutation_id][q3->permutation_id];
+
+        delta_i_plus += distance_matrix[q1->permutation_id][p2->permutation_id];
+        delta_i_plus += distance_matrix[p2->permutation_id][q3->permutation_id];
+    } else if(q1 == nullptr && q3 != nullptr) {
+        delta_j_minus += distance_matrix[q2->permutation_id][q3->permutation_id];
+
+        delta_i_plus += distance_matrix[p2->permutation_id][q3->permutation_id];
+    } else if(q1 != nullptr && q3 == nullptr) {
+        delta_j_minus += distance_matrix[q1->permutation_id][q2->permutation_id];
+
+        delta_i_plus += distance_matrix[q1->permutation_id][p2->permutation_id];
+    }
+
+    current_energy_i -= delta_i_minus;
+    current_energy_j -= delta_j_minus;
+
+    current_energy_i += delta_i_plus;
+    current_energy_j += delta_j_plus;
+
+    return pair<int,int>(current_energy_i, current_energy_j);
+}
+
 pair<int, int> energy_delta_for_transfer(vector<Link> &state,
                                          vector<vector<int>> &distance_matrix,
                                          pair<int, int> e,
@@ -508,7 +579,6 @@ pair<int, int> energy_delta_for_transfer(vector<Link> &state,
     }
 
     return pair<int,int>(current_energy_i, current_energy_j);
-
 }
 
 void make_transfer(vector<Link> &state, pair<int, int> p) {

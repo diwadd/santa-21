@@ -8,7 +8,8 @@ using namespace std;
 
 enum class OperationType {
     swap,
-    transfer
+    transfer,
+    transfer_swap
 };
 
 MarkedPermutationsLimits mark_permutations(vector<vector<int>> &permutations,
@@ -30,7 +31,7 @@ int sub_chain_energy_left(vector<Link> &state,
                           vector<vector<int>> &distance_matrix,
                           int chain_id);
 
-OperationType get_operation_type(vector<Link> &initial_state, int i, int j);
+OperationType get_operation_type(vector<Link> &initial_state, int i, int j, bool transfer);
 
 vector<int> chain_energy_left(vector<Link> &state,
                               vector<vector<int>> &distance_matrix,
@@ -51,5 +52,10 @@ pair<int, int> energy_delta_for_transfer(vector<Link> &state,
                                          vector<vector<int>> &distance_matrix,
                                          pair<int, int> e,
                                          pair<int,int> p);
+
+pair<int, int> energy_delta_for_transfer_swap(vector<Link> &state,
+                                              vector<vector<int>> &distance_matrix,
+                                              pair<int, int> e, 
+                                              pair<int,int> p);
 
 void make_transfer(vector<Link> &state, pair<int, int> p);

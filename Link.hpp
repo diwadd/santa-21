@@ -26,7 +26,7 @@ struct Link {
         m_right = l1.m_right;
     }
 
-    Link& operator=(Link &l1) {
+    Link& operator=(const Link &l1) {
         // cout << "Link operator=" << endl;
         permutation_id = l1.permutation_id;
         string_id = l1.string_id;
