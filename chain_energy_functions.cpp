@@ -171,22 +171,6 @@ int sub_chain_energy_left(vector<Link> &state,
     return e;
 }
 
-OperationType get_operation_type(vector<Link> &initial_state, int i, int j, bool transfer) {
-
-    if(initial_state[i].string_id == initial_state[j].string_id) {
-        return OperationType::swap;
-    } else {
-
-        return OperationType::transfer;
-
-        // if(transfer == true)
-        //     return OperationType::transfer;
-        // else
-        //     return OperationType::transfer_swap;
-    }
-
-}
-
 vector<int> chain_energy_left(vector<Link> &state,
                               vector<vector<int>> &distance_matrix,
                               int number_of_sub_chains) {

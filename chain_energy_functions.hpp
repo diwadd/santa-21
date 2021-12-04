@@ -31,8 +31,6 @@ int sub_chain_energy_left(vector<Link> &state,
                           vector<vector<int>> &distance_matrix,
                           int chain_id);
 
-OperationType get_operation_type(vector<Link> &initial_state, int i, int j, bool transfer);
-
 vector<int> chain_energy_left(vector<Link> &state,
                               vector<vector<int>> &distance_matrix,
                               int number_of_sub_chains);
@@ -59,3 +57,19 @@ pair<int, int> energy_delta_for_transfer_swap(vector<Link> &state,
                                               pair<int,int> p);
 
 void make_transfer(vector<Link> &state, pair<int, int> p);
+
+inline OperationType get_operation_type(vector<Link> &initial_state, int i, int j) {
+
+    if(initial_state[i].string_id == initial_state[j].string_id) {
+        return OperationType::swap;
+    } else {
+
+        return OperationType::transfer;
+
+        // if(transfer == true)
+        //     return OperationType::transfer;
+        // else
+        //     return OperationType::transfer_swap;
+    }
+
+}

@@ -130,211 +130,12 @@ pair<int,int> get_max_enegry_and_string_id(vector<int> &energy) {
 }
 
 
-long double temperature(uint64_t k, long double d_k_max)
+inline long double temperature(uint64_t k, long double d_k_max)
 {
     long double xf = 0.25;
 
     return 1 - pow(static_cast<long double>(k)/d_k_max, xf);
 }
-
-
-void run_metropolis_on_chain(vector<Link> &initial_state,
-                             vector<vector<int>> &distance_matrix,
-                             MarkedPermutationsLimits &mpl,
-                             int number_of_sub_chains,
-                             uint64_t k_max = 100,
-                             double coin_prob = 0.95) {
-
-    int n = initial_state.size();
-    
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<int> uniform_integers(0, n-1);
-    uniform_real_distribution<long double> uniform_reals(0.0, 1.0);
-    bernoulli_distribution coin_toss(coin_prob);
-
-    long double d_k_max = static_cast<long double>(k_max);
-    vector<int> energy = chain_energy_left(initial_state, distance_matrix, number_of_sub_chains);
-    energy.shrink_to_fit();
-    // int current_max_energy = *max_element(energy.begin(), energy.end());
-
-    // auto [current_max_energy, current_max_energy_string_id] = get_max_enegry_and_string_id(energy);
-    pair<int, int> p = get_max_enegry_and_string_id(energy);
-    int current_max_energy = p.first;
-    int starting_energy = p.first;
-
-    cout << "Current max energy: " << current_max_energy << endl;
-    cout << "Total energy: " << accumulate(energy.begin(), energy.end(), 0) << endl;
-
-    int best_energy = numeric_limits<int>::max();
-
-    for(uint64_t k = 0; k < k_max; k++) {
-
-        if(k % 1'000'000 == 0) {
-            cout << "k : " << k << " current_max_energy: " << current_max_energy << " t_factor: " << static_cast<long double>(k)/d_k_max << endl;
-        }
-
-        int i = 0;
-        int j = 0;
-
-        while(i == j) {
-            i = uniform_integers(gen);
-            j = uniform_integers(gen);
-        }
-
-        pair<int, int> p = {i, j};
-        bool transfer = coin_toss(gen);
-        OperationType op = get_operation_type(initial_state, i, j, transfer);
-
-        if(op == OperationType::swap) {
-
-            int current_string_id = initial_state[i].string_id;
-            int ed = energy_delta_for_swap(initial_state, distance_matrix, energy[current_string_id], p);
-
-            if(ed < 0) {
-                cout << "Energy is wrong!" << endl;
-                print_chain(initial_state);
-                assert(false);
-            }
-
-            vector<int> new_energy = energy;
-            new_energy[current_string_id] = ed;
-
-            int new_max_energy = get_max_enegry(new_energy); 
-
-            if( new_max_energy < current_max_energy ) {
-
-                swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
-
-
-                energy[current_string_id] = ed;
-                current_max_energy = new_max_energy;
-
-                if(current_max_energy < best_energy) {
-                    best_energy = current_max_energy;
-                }
-
-            } else {
-
-                long double T = temperature(k, d_k_max);
-                long double d = exp( - (static_cast<long double>(new_max_energy) - static_cast<long double>(current_max_energy)) / T );
-                long double r = uniform_reals(gen);
-
-                if(r < d) {
-
-                    swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
-
-                    energy[current_string_id] = ed;
-                    current_max_energy = new_max_energy;
-                }
-
-            }
-
-
-        } else if(op == OperationType::transfer) {
-
-            if( (mpl.start <= initial_state[j].permutation_id && initial_state[j].permutation_id <= mpl.stop) ) {
-                    continue;
-            }
-
-            int si = initial_state[i].string_id;
-            int sj = initial_state[j].string_id;
-
-            pair<int, int> ep = {energy[si], energy[sj]};
-            pair<int, int> epd = energy_delta_for_transfer(initial_state, distance_matrix, ep, p);
-
-            vector<int> new_energy = energy;
-            new_energy[si] = epd.first;
-            new_energy[sj] = epd.second;
-
-            int new_max_energy = get_max_enegry(new_energy); 
-
-            if(new_max_energy < current_max_energy) {
-
-                energy[si] = epd.first;
-                energy[sj] = epd.second;
-                current_max_energy = new_max_energy;
-
-                make_transfer(initial_state, p);
-
-                if(current_max_energy < best_energy) {
-                    best_energy = current_max_energy;
-                }
-
-            } else {
-
-                long double T = temperature(k, d_k_max);
-                long double d = exp( - (static_cast<long double>(new_max_energy) - static_cast<long double>(current_max_energy)) / T );
-                long double r = uniform_reals(gen);
-
-                if(r < d) {
-
-                    energy[si] = epd.first;
-                    energy[sj] = epd.second;
-                    current_max_energy = new_max_energy;
-
-                    make_transfer(initial_state, p);
-
-                }
-
-            }
-
-        }
-        // } else if (op == OperationType::transfer_swap) {
-
-        //     if( (mpl.start <= initial_state[i].permutation_id && initial_state[i].permutation_id <= mpl.stop) || 
-        //         (mpl.start <= initial_state[j].permutation_id && initial_state[j].permutation_id <= mpl.stop) ) {
-        //             continue;
-        //     }
-
-        //     int si = initial_state[i].string_id;
-        //     int sj = initial_state[j].string_id;
-
-        //     pair<int, int> ep = {energy[si], energy[sj]};
-        //     pair<int, int> epd = energy_delta_for_transfer_swap(initial_state, distance_matrix, ep, p);
-
-        //     vector<int> new_energy = energy;
-        //     new_energy[si] = epd.first;
-        //     new_energy[sj] = epd.second;
-
-        //     int new_max_energy = get_max_enegry(new_energy); 
-
-        //     if(new_max_energy < current_max_energy) {
-
-        //         energy[si] = epd.first;
-        //         energy[sj] = epd.second;
-        //         current_max_energy = new_max_energy;
-
-        //         swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
-
-        //     } else {
-
-        //         long double T = 1 - static_cast<long double>(k)/d_k_max;
-        //         long double d = exp( - (static_cast<long double>(new_max_energy) - static_cast<long double>(current_max_energy)) / T );
-        //         long double r = uniform_reals(gen);
-
-        //         if(r < d) {
-
-        //             energy[si] = epd.first;
-        //             energy[sj] = epd.second;
-        //             current_max_energy = new_max_energy;
-
-        //             swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
-
-        //         }
-
-        //     }
-
-        // }
-
-    }
-
-    cout << "Starting energy was: " << starting_energy << " Final state has energy: " << current_max_energy << " and is equal to:" << endl;
-    cout << "Best energy: " << best_energy << endl; 
-
-    // print_vector(initial_state);
-}
-
 
 vector<int> get_string_with_specific_id(vector<Link> &state, int string_id) {
 
@@ -524,6 +325,214 @@ void prepare_and_save_submission(string filename_chain_raw,
 }
 
 
+void run_metropolis_on_chain(vector<vector<int>> &permutations,
+                             vector<Link> &initial_state,
+                             vector<vector<int>> &distance_matrix,
+                             MarkedPermutationsLimits &mpl,
+                             int number_of_sub_chains,
+                             int mm,
+                             uint64_t k_max = 100,
+                             double coin_prob = 0.95) {
+
+    int n = initial_state.size();
+    
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<int> uniform_integers(0, n-1);
+    uniform_real_distribution<long double> uniform_reals(0.0, 1.0);
+    bernoulli_distribution coin_toss(coin_prob);
+
+    long double d_k_max = static_cast<long double>(k_max);
+    vector<int> energy = chain_energy_left(initial_state, distance_matrix, number_of_sub_chains);
+    energy.shrink_to_fit();
+    // int current_max_energy = *max_element(energy.begin(), energy.end());
+
+    // auto [current_max_energy, current_max_energy_string_id] = get_max_enegry_and_string_id(energy);
+    pair<int, int> p = get_max_enegry_and_string_id(energy);
+    int current_max_energy = p.first;
+    int starting_energy = p.first;
+
+    cout << "Current max energy: " << current_max_energy << endl;
+    cout << "Total energy: " << accumulate(energy.begin(), energy.end(), 0) << endl;
+
+    int best_energy = numeric_limits<int>::max();
+
+    for(uint64_t k = 0; k < k_max; k++) {
+
+        if(k % 100'000'000 == 0) {
+            cout << "k : " << k << " current_max_energy: " << current_max_energy << endl;
+        
+            prepare_and_save_submission("chain_raw_" + to_string(current_max_energy) + ".txt",
+                                        "submission_raw_" + to_string(current_max_energy) + ".txt",
+                                        permutations,
+                                        initial_state,
+                                        distance_matrix,
+                                        mpl,
+                                        number_of_sub_chains,
+                                        mm);
+        }
+
+        int i = 0;
+        int j = 0;
+
+        while(i == j) {
+            i = uniform_integers(gen);
+            j = uniform_integers(gen);
+        }
+
+        pair<int, int> p = {i, j};
+        OperationType op = get_operation_type(initial_state, i, j);
+
+        if(op == OperationType::swap) {
+
+            int current_string_id = initial_state[i].string_id;
+            int ed = energy_delta_for_swap(initial_state, distance_matrix, energy[current_string_id], p);
+
+            // if(ed < 0) {
+            //     cout << "Energy is wrong!" << endl;
+            //     print_chain(initial_state);
+            //     assert(false);
+            // }
+
+            vector<int> new_energy = energy;
+            new_energy[current_string_id] = ed;
+
+            int new_max_energy = get_max_enegry(new_energy); 
+
+            if( new_max_energy < current_max_energy ) {
+
+                swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
+
+
+                energy[current_string_id] = ed;
+                current_max_energy = new_max_energy;
+
+                if(current_max_energy < best_energy) {
+                    best_energy = current_max_energy;
+                }
+
+            } else {
+
+                long double T = temperature(k, d_k_max);
+                long double d = exp( - (static_cast<long double>(new_max_energy) - static_cast<long double>(current_max_energy)) / T );
+                long double r = uniform_reals(gen);
+
+                if(r < d) {
+
+                    swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
+
+                    energy[current_string_id] = ed;
+                    current_max_energy = new_max_energy;
+                }
+
+            }
+
+
+        } else if(op == OperationType::transfer) {
+
+            if( (mpl.start <= initial_state[j].permutation_id && initial_state[j].permutation_id <= mpl.stop) ) {
+                    continue;
+            }
+
+            int si = initial_state[i].string_id;
+            int sj = initial_state[j].string_id;
+
+            pair<int, int> ep = {energy[si], energy[sj]};
+            pair<int, int> epd = energy_delta_for_transfer(initial_state, distance_matrix, ep, p);
+
+            vector<int> new_energy = energy;
+            new_energy[si] = epd.first;
+            new_energy[sj] = epd.second;
+
+            int new_max_energy = get_max_enegry(new_energy); 
+
+            if(new_max_energy < current_max_energy) {
+
+                energy[si] = epd.first;
+                energy[sj] = epd.second;
+                current_max_energy = new_max_energy;
+
+                make_transfer(initial_state, p);
+
+                if(current_max_energy < best_energy) {
+                    best_energy = current_max_energy;
+                }
+
+            } else {
+
+                long double T = temperature(k, d_k_max);
+                long double d = exp( - (static_cast<long double>(new_max_energy) - static_cast<long double>(current_max_energy)) / T );
+                long double r = uniform_reals(gen);
+
+                if(r < d) {
+
+                    energy[si] = epd.first;
+                    energy[sj] = epd.second;
+                    current_max_energy = new_max_energy;
+
+                    make_transfer(initial_state, p);
+
+                }
+
+            }
+
+        }
+        // } else if (op == OperationType::transfer_swap) {
+
+        //     if( (mpl.start <= initial_state[i].permutation_id && initial_state[i].permutation_id <= mpl.stop) || 
+        //         (mpl.start <= initial_state[j].permutation_id && initial_state[j].permutation_id <= mpl.stop) ) {
+        //             continue;
+        //     }
+
+        //     int si = initial_state[i].string_id;
+        //     int sj = initial_state[j].string_id;
+
+        //     pair<int, int> ep = {energy[si], energy[sj]};
+        //     pair<int, int> epd = energy_delta_for_transfer_swap(initial_state, distance_matrix, ep, p);
+
+        //     vector<int> new_energy = energy;
+        //     new_energy[si] = epd.first;
+        //     new_energy[sj] = epd.second;
+
+        //     int new_max_energy = get_max_enegry(new_energy); 
+
+        //     if(new_max_energy < current_max_energy) {
+
+        //         energy[si] = epd.first;
+        //         energy[sj] = epd.second;
+        //         current_max_energy = new_max_energy;
+
+        //         swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
+
+        //     } else {
+
+        //         long double T = 1 - static_cast<long double>(k)/d_k_max;
+        //         long double d = exp( - (static_cast<long double>(new_max_energy) - static_cast<long double>(current_max_energy)) / T );
+        //         long double r = uniform_reals(gen);
+
+        //         if(r < d) {
+
+        //             energy[si] = epd.first;
+        //             energy[sj] = epd.second;
+        //             current_max_energy = new_max_energy;
+
+        //             swap(initial_state[i].permutation_id, initial_state[j].permutation_id);
+
+        //         }
+
+        //     }
+
+        // }
+
+    }
+
+    cout << "Starting energy was: " << starting_energy << " Final state has energy: " << current_max_energy << " and is equal to:" << endl;
+    cout << "Best energy: " << best_energy << endl; 
+
+    // print_vector(initial_state);
+}
+
+
 int main() {
 
     int n = 7;
@@ -558,7 +567,7 @@ int main() {
     uint64_t k_max = 1'000'000'000;
 
     chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    run_metropolis_on_chain(chain, distance_matrix, mpl, number_of_sub_chains, k_max);
+    run_metropolis_on_chain(permutations, chain, distance_matrix, mpl, number_of_sub_chains, m, k_max);
     chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
 
     cout << "Elapsed time: " << chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " [s]" << std::endl;
