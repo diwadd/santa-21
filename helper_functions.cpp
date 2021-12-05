@@ -12,23 +12,23 @@ int factorial(int n) {
     return res;
 }
 
-int hamming_distance(vector<int> &v1, vector<int> &v2) {
+matrix_data_type hamming_distance(vector<int> &v1, vector<int> &v2) {
 
     assert(v1.size() == v2.size());
 
     int res = 0;
     for(int i = 0; i < v1.size(); i++) {
-        res += static_cast<int>(v1[i] != v2[i]);
+        res += static_cast<matrix_data_type>(v1[i] != v2[i]);
     }
     return res;
 }
 
 
-int offset(vector<int> &v1, vector<int> &v2) {
+matrix_data_type offset(vector<int> &v1, vector<int> &v2) {
     
     assert(v1.size() == v2.size());
 
-    int res = v1.size();
+    matrix_data_type res = v1.size();
     for(int i = 0; i < v1.size(); i++) {
         vector<int> p1 = vector<int>(v1.begin() + i, v1.end());
         vector<int> p2 = vector<int>(v2.begin(), v2.end() - i);
@@ -42,11 +42,13 @@ int offset(vector<int> &v1, vector<int> &v2) {
 }
 
 
-void calculate_distance_matrix(vector<vector<int>> &permutations, vector<vector<int>> &distance_matrix) {
+void calculate_distance_matrix(vector<vector<int>> &permutations, matrix_data_type *distance_matrix) {
 
-    for(int i = 0; i < permutations.size(); i++) {
-        for(int j = 0; j < permutations.size(); j++) {
-            distance_matrix[i][j] = offset(permutations[i], permutations[j]);
+    for(int i = 0; i < PERMUTATION_OF_SEVEN; i++) {
+        // if(i % 100 == 0)
+            // cout << "i = " << i << endl;
+        for(int j = 0; j < PERMUTATION_OF_SEVEN; j++) {
+            distance_matrix[ ds_index(i, j) ] = offset(permutations[i], permutations[j]);
         }
     }
 }
@@ -164,12 +166,14 @@ vector<vector<int>> get_permutations(int n) {
         vec.push_back(base);
     } while(std::next_permutation(base.begin(), base.end()));
 
+    vec.shrink_to_fit();
+
     return vec;
 }
 
 
 vector<int> get_super_permutation(vector<int> &initial_state,
-                                  vector<vector<int>> &distance_matrix,
+                                  matrix_data_type *distance_matrix,
                                   vector<vector<int>> &permutations) {
 
     // Converts the initital_state into a human readable super permutation.
@@ -179,7 +183,7 @@ vector<int> get_super_permutation(vector<int> &initial_state,
     for(int i = 1; i < initial_state.size(); i++) {
 
         vector<int> &p = permutations[initial_state[i]];
-        int offset = distance_matrix[initial_state[i-1]][initial_state[i]];
+        int offset = distance_matrix[ds_index(initial_state[i-1], initial_state[i])];
 
         for(int j = p.size() - offset; j < p.size(); j++) {
             sp.push_back(p[j]);

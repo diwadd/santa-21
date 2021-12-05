@@ -5,7 +5,7 @@
 using namespace std;
 
 struct Link {
-    int permutation_id;
+    uint32_t permutation_id;
     int string_id;
     Link *m_left;
     Link *m_right;

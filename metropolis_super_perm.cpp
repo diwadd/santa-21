@@ -5,7 +5,7 @@
 using namespace std;
 
 void run_metropolis(vector<int> &initial_state,
-                    vector<vector<int>> &distance_matrix,
+                    matrix_data_type (*distance_matrix)[PERMUTATION_OF_SEVEN][PERMUTATION_OF_SEVEN],
                     int k_max = 100) {
 
     int n = initial_state.size();

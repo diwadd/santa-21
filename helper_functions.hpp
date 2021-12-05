@@ -1,14 +1,19 @@
 #pragma once
 
 #include <bits/stdc++.h>
+#include "constants.hpp"
 
 using namespace std;
 
-int hamming_distance(vector<int> &v1, vector<int> &v2);
+inline uint32_t ds_index(uint32_t i, uint32_t j) {
+    return i + PERMUTATION_OF_SEVEN * j;
+}
 
-int offset(vector<int> &v1, vector<int> &v2);
+matrix_data_type hamming_distance(vector<int> &v1, vector<int> &v2);
 
-void calculate_distance_matrix(vector<vector<int>> &permutations, vector<vector<int>> &distance_matrix);
+matrix_data_type offset(vector<int> &v1, vector<int> &v2);
+
+void calculate_distance_matrix(vector<vector<int>> &permutations, matrix_data_type *distance_matrix);
 
 int factorial(int n);
 
@@ -27,7 +32,7 @@ vector<int> get_base_permutation(int n);
 vector<vector<int>> get_permutations(int n);
 
 vector<int> get_super_permutation(vector<int> &initial_state,
-                                  vector<vector<int>> &distance_matrix,
+                                  matrix_data_type *distance_matrix,
                                   vector<vector<int>> &permutations);
 
 template<typename T> void print_vector(vector<T> &vec) {

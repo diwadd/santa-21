@@ -1,16 +1,17 @@
 #include <bits/stdc++.h>
 #include "energy_calculation.hpp"
+#include "constants.hpp"
 
 using namespace std;
 
 int energy_left(vector<int> &initial_state,
-           vector<vector<int>> &distance_matrix) {
+                matrix_data_type (*distance_matrix)[PERMUTATION_OF_SEVEN][PERMUTATION_OF_SEVEN]) {
 
     int e = 0;
     int n = initial_state.size();
     for(int i = 1; i < n; i++) {
         // cout << "Adding: " << distance_matrix[initial_state[i-1]][initial_state[i]] << " " << initial_state[i-1] << " " << initial_state[i] << endl;
-        e += distance_matrix[initial_state[i-1]][initial_state[i]];
+        e += (*distance_matrix)[initial_state[i-1]][initial_state[i]];
     }
     // cout << "Adding: " << distance_matrix[initial_state[0]][initial_state[n-1]] << " " << initial_state[0] << " " << initial_state[n-1] << endl;
     // e += distance_matrix[initial_state[0]][initial_state[n-1]];
@@ -19,13 +20,13 @@ int energy_left(vector<int> &initial_state,
 
 
 int energy_right(vector<int> &initial_state,
-                 vector<vector<int>> &distance_matrix) {
+                 matrix_data_type (*distance_matrix)[PERMUTATION_OF_SEVEN][PERMUTATION_OF_SEVEN]) {
 
     int e = 0;
     int n = initial_state.size();
     for(int i = n-2; i >= 0; i--) {
         // cout << "Adding: " << distance_matrix[initial_state[i]][initial_state[i+1]] << " " << i << " " << i+1 << endl;
-        e += distance_matrix[initial_state[i]][initial_state[i+1]];
+        e += (*distance_matrix)[initial_state[i]][initial_state[i+1]];
     }
     // cout << "Adding: " << distance_matrix[initial_state[0]][initial_state.size()-1] << endl;
     // e += distance_matrix[initial_state[n-1]][initial_state[0]];
@@ -34,7 +35,7 @@ int energy_right(vector<int> &initial_state,
 
 
 int energy_delta(vector<int> &initial_state,
-                 vector<vector<int>> &distance_matrix,
+                 matrix_data_type (*distance_matrix)[PERMUTATION_OF_SEVEN][PERMUTATION_OF_SEVEN],
                  pair<int,int> &swaps,
                  int current_energy) {
 
@@ -58,78 +59,78 @@ int energy_delta(vector<int> &initial_state,
 
     if( j1 != 0 and j2 != n-1 and j2 - j1 != 1) {
 
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
+        current_energy -= (*distance_matrix)[p1][p2];
+        current_energy -= (*distance_matrix)[p2][p3];
 
-        current_energy -= distance_matrix[q1][q2];
-        current_energy -= distance_matrix[q2][q3];
+        current_energy -= (*distance_matrix)[q1][q2];
+        current_energy -= (*distance_matrix)[q2][q3];
 
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p3];
+        current_energy += (*distance_matrix)[p1][q2];
+        current_energy += (*distance_matrix)[q2][p3];
 
-        current_energy += distance_matrix[q1][p2];
-        current_energy += distance_matrix[p2][q3];
+        current_energy += (*distance_matrix)[q1][p2];
+        current_energy += (*distance_matrix)[p2][q3];
 
     } else if( j1 != 0 and j2 != n-1 and j2 - j1 == 1 ) {
 
         // cout << "Here 1" << endl;
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q2][q3];
+        current_energy -= (*distance_matrix)[p1][p2];
+        current_energy -= (*distance_matrix)[p2][p3];
+        current_energy -= (*distance_matrix)[q2][q3];
 
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p2];
-        current_energy += distance_matrix[p2][q3];
+        current_energy += (*distance_matrix)[p1][q2];
+        current_energy += (*distance_matrix)[q2][p2];
+        current_energy += (*distance_matrix)[p2][q3];
 
     } else if (j1 == 0 and j2 == n-1) {
 
         // cout << "Here 2" << endl;
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q1][q2];
+        current_energy -= (*distance_matrix)[p2][p3];
+        current_energy -= (*distance_matrix)[q1][q2];
 
-        current_energy += distance_matrix[q2][p3];
-        current_energy += distance_matrix[q1][p2];
+        current_energy += (*distance_matrix)[q2][p3];
+        current_energy += (*distance_matrix)[q1][p2];
 
     } else if (j1 != 0 and j2 == n-1 and j2 - j1 != 1) {
 
         // cout << "Here 3" << endl;
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q1][q2];
+        current_energy -= (*distance_matrix)[p1][p2];
+        current_energy -= (*distance_matrix)[p2][p3];
+        current_energy -= (*distance_matrix)[q1][q2];
 
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p3];
-        current_energy += distance_matrix[q1][p2];
+        current_energy += (*distance_matrix)[p1][q2];
+        current_energy += (*distance_matrix)[q2][p3];
+        current_energy += (*distance_matrix)[q1][p2];
 
     } else if (j1 == 0 and j2 - j1 == 1) {
 
         // cout << "Here 4" << endl;
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q2][q3];
+        current_energy -= (*distance_matrix)[p2][p3];
+        current_energy -= (*distance_matrix)[q2][q3];
 
-        current_energy += distance_matrix[q2][p2];
-        current_energy += distance_matrix[p2][q3];
+        current_energy += (*distance_matrix)[q2][p2];
+        current_energy += (*distance_matrix)[p2][q3];
         return current_energy;  
 
     } else if (j2 == n - 1 and j2 - j1 == 1) {
 
         // cout << "Here 4.5" << endl;
-        current_energy -= distance_matrix[p1][p2];
-        current_energy -= distance_matrix[p2][p3];
+        current_energy -= (*distance_matrix)[p1][p2];
+        current_energy -= (*distance_matrix)[p2][p3];
 
-        current_energy += distance_matrix[p1][q2];
-        current_energy += distance_matrix[q2][p2];
+        current_energy += (*distance_matrix)[p1][q2];
+        current_energy += (*distance_matrix)[q2][p2];
 
     } else if (j1 == 0 and j2 != n-1) {
 
         // cout << "Here 5" << endl;
-        current_energy -= distance_matrix[p2][p3];
-        current_energy -= distance_matrix[q1][q2];
-        current_energy -= distance_matrix[q2][q3];
+        current_energy -= (*distance_matrix)[p2][p3];
+        current_energy -= (*distance_matrix)[q1][q2];
+        current_energy -= (*distance_matrix)[q2][q3];
 
-        current_energy += distance_matrix[q2][p3];
-        current_energy += distance_matrix[q1][p2];
-        current_energy += distance_matrix[p2][q3];
+        current_energy += (*distance_matrix)[q2][p3];
+        current_energy += (*distance_matrix)[q1][p2];
+        current_energy += (*distance_matrix)[p2][q3];
 
     } else {
 

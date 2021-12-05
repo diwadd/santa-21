@@ -3,6 +3,7 @@
 #include <bits/stdc++.h>
 #include "Link.hpp"
 #include "MarkedPermutationsLimits.hpp"
+#include "constants.hpp"
 
 using namespace std;
 
@@ -24,39 +25,39 @@ vector<Link> create_permutation_chain_ptr(vector<vector<int>> &permutations,
                                           int number_of_sub_chains);
 
 int sub_chain_energy_right(vector<Link> &state,
-                          vector<vector<int>> &distance_matrix,
+                          matrix_data_type *distance_matrix,
                           int chain_id);
 
 int sub_chain_energy_left(vector<Link> &state,
-                          vector<vector<int>> &distance_matrix,
+                          matrix_data_type *distance_matrix,
                           int chain_id);
 
 vector<int> chain_energy_left(vector<Link> &state,
-                              vector<vector<int>> &distance_matrix,
+                              matrix_data_type *distance_matrix,
                               int number_of_sub_chains);
 
 vector<int> chain_energy_right(vector<Link> &state,
-                               vector<vector<int>> &distance_matrix,
+                               matrix_data_type *distance_matrix,
                                int number_of_sub_chains);
 
 int energy_delta_for_swap(vector<Link> &state,
-                          vector<vector<int>> &distance_matrix,
+                          matrix_data_type *distance_matrix,
                           int current_energy,
-                          pair<int,int> p);
+                          pair<int,int> &p);
 
 void perform_link_swap(vector<Link> &state, pair<int, int> p);
 
 pair<int, int> energy_delta_for_transfer(vector<Link> &state,
-                                         vector<vector<int>> &distance_matrix,
+                                         matrix_data_type *distance_matrix,
                                          pair<int, int> e,
-                                         pair<int,int> p);
+                                         pair<int,int> &p);
 
 pair<int, int> energy_delta_for_transfer_swap(vector<Link> &state,
-                                              vector<vector<int>> &distance_matrix,
+                                              matrix_data_type *distance_matrix,
                                               pair<int, int> e, 
                                               pair<int,int> p);
 
-void make_transfer(vector<Link> &state, pair<int, int> p);
+void make_transfer(vector<Link> &state, pair<int, int> &p);
 
 inline OperationType get_operation_type(vector<Link> &initial_state, int i, int j) {
 

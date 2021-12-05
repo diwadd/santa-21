@@ -1,5 +1,7 @@
 #include <bits/stdc++.h>
 #include "chain_energy_functions.hpp"
+#include "constants.hpp"
+#include "helper_functions.hpp"
 
 using namespace std;
 
@@ -123,8 +125,8 @@ vector<Link> create_permutation_chain_ptr(vector<vector<int>> &permutations,
 } 
 
 int sub_chain_energy_right(vector<Link> &state,
-                          vector<vector<int>> &distance_matrix,
-                          int chain_id) {
+                           matrix_data_type *distance_matrix,
+                           int chain_id) {
 
     int e = 0;
     Link *stop = nullptr;
@@ -139,7 +141,8 @@ int sub_chain_energy_right(vector<Link> &state,
     }
 
     while(stop->m_left != nullptr) {
-        e += distance_matrix[ stop->permutation_id ][ stop->m_left->permutation_id ];
+        // e += distance_matrix[ds_index( stop->permutation_id , stop->m_left->permutation_id ];
+        e += distance_matrix[ ds_index(stop->permutation_id , stop->m_left->permutation_id) ];
         stop = stop->m_left;
     }
 
@@ -148,7 +151,7 @@ int sub_chain_energy_right(vector<Link> &state,
 }
 
 int sub_chain_energy_left(vector<Link> &state,
-                          vector<vector<int>> &distance_matrix,
+                          matrix_data_type *distance_matrix,
                           int chain_id) {
 
     int e = 0;
@@ -164,7 +167,8 @@ int sub_chain_energy_left(vector<Link> &state,
     }
 
     while(start->m_right != nullptr) {
-        e += distance_matrix[ start->permutation_id ][ start->m_right->permutation_id ];
+        // e += distance_matrix[ds_index( start->permutation_id , start->m_right->permutation_id ];
+        e += distance_matrix[ ds_index(start->permutation_id, start->m_right->permutation_id) ];
         start = start->m_right;
     }
 
@@ -172,7 +176,7 @@ int sub_chain_energy_left(vector<Link> &state,
 }
 
 vector<int> chain_energy_left(vector<Link> &state,
-                              vector<vector<int>> &distance_matrix,
+                              matrix_data_type *distance_matrix,
                               int number_of_sub_chains) {
 
     vector<int> energy(number_of_sub_chains+1, 0);
@@ -185,7 +189,7 @@ vector<int> chain_energy_left(vector<Link> &state,
 }
 
 vector<int> chain_energy_right(vector<Link> &state,
-                               vector<vector<int>> &distance_matrix,
+                               matrix_data_type *distance_matrix,
                                int number_of_sub_chains) {
 
     vector<int> energy(number_of_sub_chains+1, 0);
@@ -198,9 +202,9 @@ vector<int> chain_energy_right(vector<Link> &state,
 }
 
 int energy_delta_for_swap(vector<Link> &state,
-                          vector<vector<int>> &distance_matrix,
+                          matrix_data_type *distance_matrix,
                           int current_energy,
-                          pair<int,int> p) {
+                          pair<int,int> &p) {
 
     // i must not be equal to j.
 
@@ -218,152 +222,197 @@ int energy_delta_for_swap(vector<Link> &state,
     // cout << p1 << " " << p2 << " " << p3 << " " << q1 << " " << q2 << " " << q3 << endl;
     // cout << (p1 != nullptr) << (p3 != nullptr) << (q1 != nullptr) << (q3 != nullptr) << (p3 != q2) << (p2 != q1) << endl;
 
-    if( p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 != q2 && p2 != q1 && p1 != q2 && q3 != p2 ) { // 1
+    if(p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr) {
 
-        // cout << "Case 1" << endl;
-        current_energy -= distance_matrix[p1->permutation_id][p2->permutation_id];
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
+        if( p3 != q2 && p2 != q1 && p1 != q2 && q3 != p2 ) { // 1
 
-        current_energy -= distance_matrix[q1->permutation_id][q2->permutation_id];
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
+            // cout << "Case 1" << endl;
+            current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+            current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        current_energy += distance_matrix[p1->permutation_id][q2->permutation_id];
-        current_energy += distance_matrix[q2->permutation_id][p3->permutation_id];
+            current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+            current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
 
-        current_energy += distance_matrix[q1->permutation_id][p2->permutation_id];
-        current_energy += distance_matrix[p2->permutation_id][q3->permutation_id];
-        return current_energy;
+            current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+            current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
 
-    } else if( p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 != q2 && q1 != p2 && p1 == q2 && q3 == p2 ) { // 2 prime
+            current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+            current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
+            return current_energy;
 
-        // cout << "Case 2 prime" << endl;
-        current_energy -= distance_matrix[q1->permutation_id][q2->permutation_id];
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
+        } else if( p3 != q2 && q1 != p2 && p1 == q2 && q3 == p2 ) { // 2 prime
 
-        current_energy += distance_matrix[q1->permutation_id][p2->permutation_id];
-        current_energy += distance_matrix[p2->permutation_id][q2->permutation_id];
-        current_energy += distance_matrix[q2->permutation_id][p3->permutation_id];
-        return current_energy;
+            // cout << "Case 2 prime" << endl;
+            current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+            current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+            current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-    } else if( p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 == q2 && q1 == p2 && p1 != q2 && q3 != p2 ) { // 2
+            current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+            current_energy += distance_matrix[ds_index(p2->permutation_id,q2->permutation_id)];
+            current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
+            return current_energy;
 
-        // cout << "Case 2" << endl;
-        current_energy -= distance_matrix[p1->permutation_id][p2->permutation_id];
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
+        } else if( p3 == q2 && q1 == p2 && p1 != q2 && q3 != p2 ) { // 2
 
-        current_energy += distance_matrix[p1->permutation_id][q2->permutation_id];
-        current_energy += distance_matrix[q2->permutation_id][p2->permutation_id];
-        current_energy += distance_matrix[p2->permutation_id][q3->permutation_id];
-        return current_energy;
+            // cout << "Case 2" << endl;
+            current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+            current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+            current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+
+            current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+            current_energy += distance_matrix[ds_index(q2->permutation_id,p2->permutation_id)];
+            current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
+            return current_energy;
+
+        }
+
+
+    // if( p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 != q2 && p2 != q1 && p1 != q2 && q3 != p2 ) { // 1
+
+    //     // cout << "Case 1" << endl;
+    //     current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+    //     current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+
+    //     current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+    //     current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+
+    //     current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+    //     current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
+
+    //     current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+    //     current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
+    //     return current_energy;
+
+    // } else if( p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 != q2 && q1 != p2 && p1 == q2 && q3 == p2 ) { // 2 prime
+
+    //     // cout << "Case 2 prime" << endl;
+    //     current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+    //     current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+    //     current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+
+    //     current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+    //     current_energy += distance_matrix[ds_index(p2->permutation_id,q2->permutation_id)];
+    //     current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
+    //     return current_energy;
+
+    // } else if( p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 == q2 && q1 == p2 && p1 != q2 && q3 != p2 ) { // 2
+
+    //     // cout << "Case 2" << endl;
+    //     current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+    //     current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+    //     current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+
+    //     current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+    //     current_energy += distance_matrix[ds_index(q2->permutation_id,p2->permutation_id)];
+    //     current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
+    //     return current_energy;
 
     } else if( p1 != nullptr && p3 == nullptr && q1 == nullptr && q3 != nullptr && p3 != q2 && p2 != q1 && p1 != q2 && q3 != p2 ) { // 7 prime
 
         // cout << "Case 7 prime" << endl;
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
-        current_energy -= distance_matrix[p1->permutation_id][p2->permutation_id];
+        current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
 
-        current_energy += distance_matrix[p2->permutation_id][q3->permutation_id];
-        current_energy += distance_matrix[p1->permutation_id][q2->permutation_id];
+        current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
+        current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
         return current_energy;
 
     } else if( p1 == nullptr && p3 != nullptr && q1 != nullptr && q3 == nullptr && p3 != q2 && p2 != q1 && p1 != q2 && q3 != p2 ) { // 7
 
         // cout << "Case 7" << endl;
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
-        current_energy -= distance_matrix[q1->permutation_id][q2->permutation_id];
+        current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
 
-        current_energy += distance_matrix[q2->permutation_id][p3->permutation_id];
-        current_energy += distance_matrix[q1->permutation_id][p2->permutation_id];
+        current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
+        current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
         return current_energy;
 
     } else if( q1 != nullptr && q3 != nullptr && p1 != nullptr && p3 == nullptr && q3 != p2 && p1 != q2 ) { // 5 prime
 
         // cout << "Case 5 prime" << endl;
-        current_energy -= distance_matrix[q1->permutation_id][q2->permutation_id];
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
-        current_energy -= distance_matrix[p1->permutation_id][p2->permutation_id];
+        current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+        current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
 
-        current_energy += distance_matrix[q1->permutation_id][p2->permutation_id];
-        current_energy += distance_matrix[p2->permutation_id][q3->permutation_id];
-        current_energy += distance_matrix[p1->permutation_id][q2->permutation_id];
+        current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+        current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
+        current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
         return current_energy;
 
     } else if ( p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 == nullptr && p3 != q2 && q1 != p2 ) { // 5
 
         // cout << "Case 5" << endl;
-        current_energy -= distance_matrix[p1->permutation_id][p2->permutation_id];
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
-        current_energy -= distance_matrix[q1->permutation_id][q2->permutation_id];
+        current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+        current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
 
-        current_energy += distance_matrix[p1->permutation_id][q2->permutation_id];
-        current_energy += distance_matrix[q2->permutation_id][p3->permutation_id];
-        current_energy += distance_matrix[q1->permutation_id][p2->permutation_id];
+        current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+        current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
+        current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
         return current_energy;
     
     } else if( q1 == nullptr && q3 != nullptr && p1 != nullptr && p3 != nullptr && q3 == p2 && p1 == q2 ) { // 3 prime
 
         // cout << "Case 3 prime" << endl;
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
+        current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        current_energy += distance_matrix[p2->permutation_id][q2->permutation_id];
-        current_energy += distance_matrix[q2->permutation_id][p3->permutation_id];
+        current_energy += distance_matrix[ds_index(p2->permutation_id,q2->permutation_id)];
+        current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
         return current_energy;
 
     } else if (p1 == nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 == q2 && q1 == p2 ) { // 3
         
         // cout << "Case 3" << endl;
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
+        current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
 
-        current_energy += distance_matrix[q2->permutation_id][p2->permutation_id];
-        current_energy += distance_matrix[p2->permutation_id][q3->permutation_id];
+        current_energy += distance_matrix[ds_index(q2->permutation_id,p2->permutation_id)];
+        current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
         return current_energy;  
 
     } else if (p1 != nullptr && p3 == nullptr && q1 != nullptr && q3 != nullptr && q3 == p2 && p1 == q2) { // 6 prime
 
         // cout << "Case 6 prime" << endl;
-        current_energy -= distance_matrix[q1->permutation_id][q2->permutation_id];
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
+        current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+        current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
 
-        current_energy += distance_matrix[q1->permutation_id][p2->permutation_id];
-        current_energy += distance_matrix[p2->permutation_id][q2->permutation_id];
+        current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+        current_energy += distance_matrix[ds_index(p2->permutation_id,q2->permutation_id)];
         return current_energy;
 
     } else if (p1 != nullptr && p3 != nullptr && q1 != nullptr && q3 == nullptr && p3 == q2 && q1 == p2) { // 6
 
         // cout << "Case 6" << endl;
-        current_energy -= distance_matrix[p1->permutation_id][p2->permutation_id];
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
+        current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+        current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        current_energy += distance_matrix[p1->permutation_id][q2->permutation_id];
-        current_energy += distance_matrix[q2->permutation_id][p2->permutation_id];
+        current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+        current_energy += distance_matrix[ds_index(q2->permutation_id,p2->permutation_id)];
         return current_energy;
 
     } else if( q1 == nullptr && q3 != nullptr && p1 != nullptr && p3 != nullptr && q3 != p2 && p1 != q2 ) { // 4 prime
 
         // cout << "Case 4 prime" << endl;
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
-        current_energy -= distance_matrix[p1->permutation_id][p2->permutation_id];
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
+        current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+        current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        current_energy += distance_matrix[p2->permutation_id][q3->permutation_id];
-        current_energy += distance_matrix[p1->permutation_id][q2->permutation_id];
-        current_energy += distance_matrix[q2->permutation_id][p3->permutation_id];
+        current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
+        current_energy += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+        current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
         return current_energy;
 
     } else if(p1 == nullptr && p3 != nullptr && q1 != nullptr && q3 != nullptr && p3 != q2 && q1 != p2 ) { // 4
 
         // cout << "Case 4" << endl;
-        current_energy -= distance_matrix[p2->permutation_id][p3->permutation_id];
-        current_energy -= distance_matrix[q1->permutation_id][q2->permutation_id];
-        current_energy -= distance_matrix[q2->permutation_id][q3->permutation_id];
+        current_energy -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
+        current_energy -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+        current_energy -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
 
-        current_energy += distance_matrix[q2->permutation_id][p3->permutation_id];
-        current_energy += distance_matrix[q1->permutation_id][p2->permutation_id];
-        current_energy += distance_matrix[p2->permutation_id][q3->permutation_id];
+        current_energy += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
+        current_energy += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+        current_energy += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
         return current_energy;
 
     } else {
@@ -453,7 +502,7 @@ void perform_link_swap(vector<Link> &state,
 }
 
 pair<int, int> energy_delta_for_transfer_swap(vector<Link> &state,
-                                              vector<vector<int>> &distance_matrix,
+                                              matrix_data_type *distance_matrix,
                                               pair<int, int> e, 
                                               pair<int,int> p) {
     int current_energy_i = e.first;
@@ -477,35 +526,35 @@ pair<int, int> energy_delta_for_transfer_swap(vector<Link> &state,
     int delta_j_plus = 0;
 
     if(p1 != nullptr && p3 != nullptr) {
-        delta_i_minus += distance_matrix[p1->permutation_id][p2->permutation_id];
-        delta_i_minus += distance_matrix[p2->permutation_id][p3->permutation_id];
+        delta_i_minus += distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
+        delta_i_minus += distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        delta_j_plus += distance_matrix[p1->permutation_id][q2->permutation_id];
-        delta_j_plus += distance_matrix[q2->permutation_id][p3->permutation_id];
+        delta_j_plus += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
+        delta_j_plus += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
     } else if(p1 == nullptr && p3 != nullptr) {
-        delta_i_minus += distance_matrix[p2->permutation_id][p3->permutation_id];
+        delta_i_minus += distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        delta_j_plus += distance_matrix[q2->permutation_id][p3->permutation_id];
+        delta_j_plus += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
     } else if(p1 != nullptr && p3 == nullptr) {
-        delta_i_minus += distance_matrix[p1->permutation_id][p2->permutation_id];
+        delta_i_minus += distance_matrix[ds_index(p1->permutation_id,p2->permutation_id)];
 
-        delta_j_plus += distance_matrix[p1->permutation_id][q2->permutation_id];
+        delta_j_plus += distance_matrix[ds_index(p1->permutation_id,q2->permutation_id)];
     }
 
     if(q1 != nullptr && q3 != nullptr) {
-        delta_j_minus += distance_matrix[q1->permutation_id][q2->permutation_id];
-        delta_j_minus += distance_matrix[q2->permutation_id][q3->permutation_id];
+        delta_j_minus += distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+        delta_j_minus += distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
 
-        delta_i_plus += distance_matrix[q1->permutation_id][p2->permutation_id];
-        delta_i_plus += distance_matrix[p2->permutation_id][q3->permutation_id];
+        delta_i_plus += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
+        delta_i_plus += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
     } else if(q1 == nullptr && q3 != nullptr) {
-        delta_j_minus += distance_matrix[q2->permutation_id][q3->permutation_id];
+        delta_j_minus += distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
 
-        delta_i_plus += distance_matrix[p2->permutation_id][q3->permutation_id];
+        delta_i_plus += distance_matrix[ds_index(p2->permutation_id,q3->permutation_id)];
     } else if(q1 != nullptr && q3 == nullptr) {
-        delta_j_minus += distance_matrix[q1->permutation_id][q2->permutation_id];
+        delta_j_minus += distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
 
-        delta_i_plus += distance_matrix[q1->permutation_id][p2->permutation_id];
+        delta_i_plus += distance_matrix[ds_index(q1->permutation_id,p2->permutation_id)];
     }
 
     current_energy_i -= delta_i_minus;
@@ -518,9 +567,9 @@ pair<int, int> energy_delta_for_transfer_swap(vector<Link> &state,
 }
 
 pair<int, int> energy_delta_for_transfer(vector<Link> &state,
-                                         vector<vector<int>> &distance_matrix,
+                                         matrix_data_type *distance_matrix,
                                          pair<int, int> e,
-                                         pair<int,int> p) {
+                                         pair<int,int> &p) {
 
     int current_energy_i = e.first;
     int current_energy_j = e.second;
@@ -538,34 +587,34 @@ pair<int, int> energy_delta_for_transfer(vector<Link> &state,
     Link* q3 = state[j].m_right;
 
     if(p1 != nullptr && p3 != nullptr) {
-        current_energy_i -= distance_matrix[p2->permutation_id][p3->permutation_id];
+        current_energy_i -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        current_energy_i += distance_matrix[p2->permutation_id][q2->permutation_id];
-        current_energy_i += distance_matrix[q2->permutation_id][p3->permutation_id];
+        current_energy_i += distance_matrix[ds_index(p2->permutation_id,q2->permutation_id)];
+        current_energy_i += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
     } else if(p1 != nullptr && p3 == nullptr) {
-        current_energy_i += distance_matrix[p2->permutation_id][q2->permutation_id];
+        current_energy_i += distance_matrix[ds_index(p2->permutation_id,q2->permutation_id)];
     } else if(p1 == nullptr && p3 != nullptr) {
-        current_energy_i -= distance_matrix[p2->permutation_id][p3->permutation_id];
+        current_energy_i -= distance_matrix[ds_index(p2->permutation_id,p3->permutation_id)];
 
-        current_energy_i += distance_matrix[p2->permutation_id][q2->permutation_id];
-        current_energy_i += distance_matrix[q2->permutation_id][p3->permutation_id];
+        current_energy_i += distance_matrix[ds_index(p2->permutation_id,q2->permutation_id)];
+        current_energy_i += distance_matrix[ds_index(q2->permutation_id,p3->permutation_id)];
     }
 
     if(q1 != nullptr && q3 != nullptr) {
-        current_energy_j -= distance_matrix[q1->permutation_id][q2->permutation_id];
-        current_energy_j -= distance_matrix[q2->permutation_id][q3->permutation_id];
+        current_energy_j -= distance_matrix[ds_index(q1->permutation_id,q2->permutation_id)];
+        current_energy_j -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
         
-        current_energy_j += distance_matrix[q1->permutation_id][q3->permutation_id];
+        current_energy_j += distance_matrix[ds_index(q1->permutation_id,q3->permutation_id)];
     } else if(q1 == nullptr && q3 != nullptr) {
-        current_energy_j -= distance_matrix[q2->permutation_id][q3->permutation_id];
+        current_energy_j -= distance_matrix[ds_index(q2->permutation_id,q3->permutation_id)];
     } else if(q1 != nullptr && q3 == nullptr) {
-        current_energy_j -= distance_matrix[q1->permutation_id][q2 ->permutation_id];
+        current_energy_j -= distance_matrix[ds_index(q1->permutation_id,q2 ->permutation_id)];
     }
 
     return pair<int,int>(current_energy_i, current_energy_j);
 }
 
-void make_transfer(vector<Link> &state, pair<int, int> p) {
+void make_transfer(vector<Link> &state, pair<int, int> &p) {
 
     int i = p.first;
     int j = p.second;
