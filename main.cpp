@@ -56,10 +56,11 @@ inline double fast_pow(double a, double b) {
 
 inline double temperature(uint64_t k, long double d_k_max)
 {
-    constexpr double xf = 0.10;
+    constexpr double xf = 0.1;
 
     return 1 - pow(static_cast<double>(k)/d_k_max, xf);
     // return 1 - fast_pow(static_cast<double>(k)/d_k_max, xf);
+    // return 1 - pow(static_cast<double>(k)/d_k_max, xf;
 }
 
 vector<int> get_string_with_specific_id(vector<Link> &state, int string_id) {
@@ -408,6 +409,7 @@ void run_metropolis_on_chain(vector<vector<int>> &permutations,
                 double x = - (static_cast<double>(new_max_energy) - static_cast<double>(current_max_energy)) / T;
                 // double d = fast_exp_v2(x);
                 double d = exp(x);
+                cout << "x new_max_energy: " << new_max_energy << " current_max_energy: " << current_max_energy << " x: " << x << " d: " << d << endl;
                 // This is simple exp(x) but faster.
                 // float xf[4] = {x, 0.0, 0.0, 0.0};
                 // __m128 m128xf = _mm_load_ps(xf);
@@ -471,6 +473,8 @@ void run_metropolis_on_chain(vector<vector<int>> &permutations,
                 // float xf[4] = {x, 0.0, 0.0, 0.0};
                 // __m128 m128xf = _mm_load_ps(xf);
                 // float d = _mm_cvtss_f32(fast_exp(m128xf));
+
+                cout << "y new_max_energy: " << new_max_energy << " current_max_energy: " << current_max_energy << " x: " << x << " d: " << d << endl;
 
                 double r = uint64_to_double(next_xoshiro256_plus());
 
@@ -598,7 +602,7 @@ int main() {
 
     // print_chain(chain);
 
-    constexpr uint64_t k_max = 1000'000'000;
+    constexpr uint64_t k_max = 1'0'000'000;
 
     chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     run_metropolis_on_chain(permutations, chain, distance_matrix, mpl, number_of_sub_chains, m, k_max);
